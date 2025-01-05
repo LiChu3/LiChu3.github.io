@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html data-color-mode="light" data-dark-theme="dark" data-light-theme="light" lang="zh-CN">
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href='https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/Primer/21.0.7/primer.css' rel='stylesheet' />
+    
+    <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg"><script>
+        let theme = localStorage.getItem("meek_theme") || "light";
+        document.documentElement.setAttribute("data-color-mode", theme);
+    </script>
+<meta name="description" content="[TOC]
+
+# 基于江科大的CAN通信协议笔记
+
+## 1、CAN是什么？
+
+​	**CAN 是 Controller Area Network 的缩写（以下称为 CAN），是 ISO*1 国际标准化的串行通信协议**，CAN 通过 ISO11898 及 ISO11519 进行了标准化，现在在欧洲已是汽车网络的标准协议。">
+<meta property="og:title" content="CAN通讯协议笔记">
+<meta property="og:description" content="[TOC]
+
+# 基于江科大的CAN通信协议笔记
+
+## 1、CAN是什么？
+
+​	**CAN 是 Controller Area Network 的缩写（以下称为 CAN），是 ISO*1 国际标准化的串行通信协议**，CAN 通过 ISO11898 及 ISO11519 进行了标准化，现在在欧洲已是汽车网络的标准协议。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://lichu3.github.io/post/CAN-tong-xun-xie-yi-bi-ji.html">
+<meta property="og:image" content="https://github.githubassets.com/favicons/favicon.svg">
+<title>CAN通讯协议笔记</title>
+
+
+
+</head>
+<style>
+body{box-sizing: border-box;min-width: 200px;max-width: 900px;margin: 20px auto;padding: 45px;font-size: 16px;font-family: sans-serif;line-height: 1.25;}
+#header{display:flex;padding-bottom:8px;border-bottom: 1px solid var(--borderColor-muted, var(--color-border-muted));margin-bottom: 16px;}
+#footer {margin-top:64px; text-align: center;font-size: small;}
+
+</style>
+
+<style>
+.postTitle{margin: auto 0;font-size:40px;font-weight:bold;}
+.title-right{display:flex;margin:auto 0 0 auto;}
+.title-right .circle{padding: 14px 16px;margin-right:8px;}
+#postBody{border-bottom: 1px solid var(--color-border-default);padding-bottom:36px;}
+#postBody hr{height:2px;}
+#cmButton{height:48px;margin-top:48px;}
+#comments{margin-top:64px;}
+.g-emoji{font-size:24px;}
+@media (max-width: 600px) {
+    body {padding: 8px;}
+    .postTitle{font-size:24px;}
+}
+
+</style>
+
+
+
+
+<body>
+    <div id="header">
+<h1 class="postTitle">CAN通讯协议笔记</h1>
+<div class="title-right">
+    <a href="https://lichu3.github.io" id="buttonHome" class="btn btn-invisible circle" title="首页">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathHome" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+    <a href="https://github.com/LiChu3/lichu3.github.io/issues/2" target="_blank" class="btn btn-invisible circle" title="Issue">
+        <svg class="octicon" width="16" height="16">
+            <path id="pathIssue" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+    
+
+    <a class="btn btn-invisible circle" onclick="modeSwitch();" title="切换主题">
+        <svg class="octicon" width="16" height="16" >
+            <path id="themeSwitch" fill-rule="evenodd"></path>
+        </svg>
+    </a>
+
+</div>
+</div>
+    <div id="content">
+<div class="markdown-body" id="postBody"><p>[TOC]</p>
+<h1>基于江科大的CAN通信协议笔记</h1>
+<h2>1、CAN是什么？</h2>
+<p>​	<strong>CAN 是 Controller Area Network 的缩写（以下称为 CAN），是 ISO*1 国际标准化的串行通信协议</strong>，CAN 通过 ISO11898 及 ISO11519 进行了标准化，现在在欧洲已是汽车网络的标准协议。</p>
+<h2>2、CAN 的特点</h2>
+<p><strong>(1) 多主控制</strong></p>
+<p>在总线空闲时，<strong>所有的单元都可开始发送消息（多主控制</strong>）。</p>
+<p>最先访问总线的单元可获得发送权</p>
+<p>多个单元同时开始发送时，<strong><em>发送高优先级 ID 消息的单元可获得发送权</em>。</strong></p>
+<p><strong>(2) 消息的发送</strong></p>
+<p>在 CAN 协议中，所有的消息都以<strong>固定的格式</strong>发送。总线空闲时，所有与总线相连的单元都可以开始发送新消息。两个以上的单元同时开始发送消息时，根据<strong>标识符</strong>（Identifier 以下称为 ID）决定优先级。</p>
+<p>*ID 并不是表示发送的目的地址，*而是表示访问总线的消息的优先级。两个以上的单元同时开始发送消息时，对各消息 ID 的每个位进行逐个仲裁比较。仲裁获胜（被判定为优先级最高）的单元可继续发送消息，仲裁失利的单元则立刻停止发送而进行接收工作。</p>
+<p><strong>(3) 系统的柔软性</strong></p>
+<p>与总线相连的单元<strong>没有类似于“地址”的信息</strong>。因此在总线上增加单元时，连接在总线上的其它单元的软硬件及应用层都不需要改变。</p>
+<p><strong>(4) 通信速度</strong></p>
+<p>根据整个网络的规模，可<strong>设定适合的通信速度</strong>。</p>
+<p>**在同一网络中，所有单元必须设定成统一的通信速度。**即使有一个单元的通信速度与其它的不一样，此单元也会输出错误信号，妨碍整个网络的通信。不同网络间则可以有不同的通信速度。</p>
+<p><strong>(5) 远程数据请求</strong></p>
+<p>可通过发送“遥控帧” 请求其他单元发送数据。</p>
+<p><strong>(6) 错误检测功能·错误通知功能·错误恢复功能</strong></p>
+<p>所有的单元都可以检测错误（错误检测功能）。</p>
+<p>检测出错误的单元会立即同时通知其他所有单元（错误通知功能）。</p>
+<p>正在发送消息的单元一旦检测出错误，会强制结束当前的发送。强制结束发送的单元会不断反复地重新发送此消息直到成功发送为止（错误恢复功能）。</p>
+<p><strong>(7) 故障封闭</strong></p>
+<p>CAN 可以判断出错误的类型是总线上暂时的数据错误（如外部噪声等）还是持续的数据错误（如单元内部故障、驱动器故障、断线等）。由此功能，<strong>当总线上发生持续数据错误时，可将引起此故障的单元从总线上隔离出去。</strong></p>
+<blockquote>
+<p>同过判断是持续错误还是暂时错误来进行诊断，持续错误会被总线踢出，直到总线达到128个空闲周期之后才能恢复发送。</p>
+</blockquote>
+<h2>3、错误</h2>
+<p><em>错误分为三种状态</em></p>
+<ul>
+<li>
+<p><strong>主动错误状态</strong></p>
+<p>可以正常参加总线通信 ，测出错误时，输出主动错误标志。</p>
+</li>
+<li>
+<p><strong>被动错误状态</strong></p>
+<p>虽能参加总线通信，但为不妨碍其它单元通信，接收时不能积极地发送错误通知。</p>
+<p>处于被动错误状态的单元即使检测出错误，而其它处于<strong>主动错误状态的单元如果没发现错误</strong>，整个总线也被认为是没有错误的</p>
+</li>
+</ul>
+<p>处于被动错误状态的单元检测出错误时，输出被动错误标志。 另外，处于被动错误状态的单元在发送结束后不能马上再次开始发送。在开始下次发送前，在<strong>间隔帧期间内必须插入“延迟传送”(8 个位的隐性位)。</strong></p>
+<ul>
+<li>
+<p><strong>总线关闭态</strong></p>
+<p>不能参加总线上通信</p>
+</li>
+</ul>
+<p><strong>这些状态依靠发送错误计数和接收错误计数来管理</strong>，<strong>根据计数值决定进入何种状态。错误状态和计数值的关</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736064908493.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736064908493.png" alt="1736064908493" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736064971845.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736064971845.png" alt="1736064971845" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736064992405.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736064992405.png" alt="1736064992405" style="max-width: 100%;"></a></p>
+<h2>4、CAN总线物理层定义</h2>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065117622.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065117622.png" alt="1736065117622" style="max-width: 100%;"></a></p>
+<p>CAN 收发器根据两根总线（ CAN_High 和 CAN_Low）的电位差来判断总线电平。总线电平分为显性电平和隐性电平两种。 总线必须处于两种电平之一。 总线上执行**逻辑上的线“与”**时，显性电平为“0”，隐性电平为“1”。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065227394.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065227394.png" alt="1736065227394" style="max-width: 100%;"></a></p>
+<h2>5、CAN协议帧格式</h2>
+<p>通信是通过以下 <strong>5 种</strong>类型的帧进行的。</p>
+<ul>
+<li>
+<p>**数据帧：**用于发送单元向接收单元传送数据的帧</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065587332.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065587332.png" alt="1736065587332" style="max-width: 100%;"></a></p>
+</li>
+</ul>
+<p>组成：</p>
+<p>(1) 帧起始表示数据帧开始的段。</p>
+<p>(2) 仲裁段表示该帧优先级的段。</p>
+<p><strong>标准格式和扩展格式在此的构成有所不同。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065802944.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065802944.png" alt="1736065802944" style="max-width: 100%;"></a></p>
+<p>(3) 控制段表示数据的字节数及保留位的段。</p>
+<p>控制段由 6 个位构成，表示数据段的字节数。标准格式和扩展格式的构<strong>成有所不同。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065946230.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736065946230.png" alt="1736065946230" style="max-width: 100%;"></a></p>
+<p>(4) 数据段数据的内容，可发送 0～8 个字节的数据。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066006398.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066006398.png" alt="1736066006398" style="max-width: 100%;"></a></p>
+<p>(5) CRC 段检查帧的传输错误的段。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066022416.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066022416.png" alt="1736066022416" style="max-width: 100%;"></a></p>
+<p>(6) ACK 段表示确认正常接收的段。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066053841.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066053841.png" alt="1736066053841" style="max-width: 100%;"></a></p>
+<p>1 发送单元的 ACK 段发送单元在 ACK 段发送 2 个位的隐性位。</p>
+<p>2 接收单元的 ACK 段接收到正确消息的单元在 ACK 槽(ACK Slot)发送显性位， 通知发送单元正常接收结束。</p>
+<p><strong>(7) 帧结束表示数据帧结束的段。</strong></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066190741.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066190741.png" alt="1736066190741" style="max-width: 100%;"></a></p>
+<ul>
+<li>
+<p><strong>遥控帧</strong>：用于接收单元向具有相同 ID 的发送单元请求数据的帧</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066259992.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736066259992.png" alt="1736066259992" style="max-width: 100%;"></a></p>
+<p><strong>• 数据帧和遥控帧的不同</strong></p>
+<p><em><strong>遥控帧的 RTR 位为隐性位</strong></em>，没有数据段。</p>
+<p><strong>• 遥控帧没有数据段，数据长度码该如何表示？</strong></p>
+<p>遥控帧的数据长度码以<strong>所请求数据帧的数据长度码</strong>表示。</p>
+<p><strong>• 没有数据段的数据帧有何用途？</strong></p>
+<p>例如，可用于各单元的定期连接确认/应答、或仲裁段本身带有实质性信息的情况下。</p>
+</li>
+<li>
+<p><strong>错误帧</strong>：用于当检测出错误时向其它单元通知错误的帧。</p>
+<p>错误帧由错误标志和错误界定符构成 ,错误标志包括主动错误标志和被动错误标志两种。</p>
+<p><strong>主动错误标志</strong>： 6 个位的显性位</p>
+<p><strong>被动错误标志：</strong> 6 个位的隐性位</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075516615.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075516615.png" alt="1736075516615" style="max-width: 100%;"></a></p>
+</li>
+<li>
+<p><strong>过载帧</strong>：用于接收单元通知其尚未做好接收准备的帧</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075567175.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075567175.png" alt="1736075567175" style="max-width: 100%;"></a></p>
+</li>
+<li>
+<p><strong>帧间隔</strong>：用于将数据帧及遥控帧与前面的帧分离开来的帧。</p>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075584573.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075584573.png" alt="1736075584573" style="max-width: 100%;"></a></p>
+<p>(1) 间隔</p>
+<p><strong>3 个位的隐性位</strong>。</p>
+<p>(2) 总线空闲</p>
+<p>隐性电平，无长度限制（0 亦可）。</p>
+<p>本状态下，可视为总线空闲，要发送的单元可开始访问总线。</p>
+<p>(3) 延迟传送（发送暂时停止）</p>
+<p>8 个位的隐性位。只在处于<strong>被动错误状态</strong>的单元刚发送一个消息后的帧间隔中包含的段</p>
+<h2>6 优先级决定</h2>
+<p>1、先入为主</p>
+<p>2,非破环性总裁</p>
+<p>总裁段线与逻辑，显性0优先级别高。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075805867.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075805867.png" alt="1736075805867" style="max-width: 100%;"></a></p>
+<p>3、标准格式和扩展格式的优先级</p>
+<p>标准格式 ID 与具有相同 ID 的遥控帧或者扩展格式的数据帧在总线上竞争时，标准格式的 RTR 位为显性位的具有优先权，可继续发送。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075870499.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736075870499.png" alt="1736075870499" style="max-width: 100%;"></a>****</p>
+<h2>7、位填充</h2>
+<p>位填充是为防止突发错误而设定的功能。当同样的电平持续 5 位时则添加一个位的反型数据。</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076017341.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076017341.png" alt="1736076017341" style="max-width: 100%;"></a></p>
+<p>作用：</p>
+<p>区分错误帧，总线空闲帧等，避免长串的帧对逻辑分析出现干扰。</p>
+<p>对长串的1或者0信号，提供下降沿用于数据对其同步。</p>
+<h2>8、位错误</h2>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076243389.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076243389.png" alt="1736076243389" style="max-width: 100%;"></a></p>
+<ul>
+<li>
+<p>错误帧的输出</p>
+<p><em><strong>发送单元发送完错误帧后，将再次发送数据帧或遥控帧。</strong></em></p>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076476166.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076476166.png" alt="1736076476166" style="max-width: 100%;"></a></p>
+<h2>9、位时序</h2>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076685083.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076685083.png" alt="1736076685083" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076715291.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736076715291.png" alt="1736076715291" style="max-width: 100%;"></a></p>
+<blockquote>
+<p>1、当发送端开始发送信号的时候，在发送的第一个位（起始信号）的同步段SS，所有接受段进行同步，开始自己的SS，至此，各个设备的位时序都同步到SS段。由于协议规定了相同的Tq,所以在没有干扰的理想情况下，信号接受与发送会实现同步而不会出现问题：</p>
+<p>2但是实际情况中的干扰不可消除，在多次的累计中会达出现很大的干扰。信号的时序之间有比较大的出入。此时需要再同步。</p>
+<p>再同步过程中，接收方通过对比自己的时序与发送方的同步SS位置偏差，判断是自己快了（增加PBS1补偿宽度1-4Tq）,慢了（删除PBS2补偿款度）</p>
+</blockquote>
+<p>1</p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736079339434.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736079339434.png" alt="1736079339434" style="max-width: 100%;"></a></p>
+<p>2<a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736079367691.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736079367691.png" alt="1736079367691" style="max-width: 100%;"></a></p>
+<p><a target="_blank" rel="noopener noreferrer" href="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736079557777.png"><img src="CAN%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE%E5%AD%A6%E4%B9%A0.assets/1736079557777.png" alt="1736079557777" style="max-width: 100%;"></a></p></div>
+<div style="font-size:small;margin-top:8px;float:right;"></div>
+
+<button class="btn btn-block" type="button" onclick="openComments()" id="cmButton">评论</button>
+<div class="comments" id="comments"></div>
+
+</div>
+    <div id="footer"><div id="footer1">Copyright © <span id="copyrightYear"></span> <a href="https://lichu3.github.io">Blog Title</a></div>
+<div id="footer2">
+    <span id="runday"></span><span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>
+</div>
+
+<script>
+var now=new Date();
+document.getElementById("copyrightYear").innerHTML=now.getFullYear();
+
+if(""!=""){
+    var startSite=new Date("");
+    var diff=now.getTime()-startSite.getTime();
+    var diffDay=Math.floor(diff/(1000*60*60*24));
+    document.getElementById("runday").innerHTML="网站运行"+diffDay+"天"+" • ";
+}
+</script></div>
+</body>
+<script>
+var IconList={'sun': 'M8 10.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V.75A.75.75 0 018 0zm0 13a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 13zM2.343 2.343a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.061l-1.061-1.06a.75.75 0 010-1.061zM16 8a.75.75 0 01-.75.75h-1.5a.75.75 0 010-1.5h1.5A.75.75 0 0116 8zM3 8a.75.75 0 01-.75.75H.75a.75.75 0 010-1.5h1.5A.75.75 0 013 8zm10.657-5.657a.75.75 0 010 1.061l-1.061 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm-9.193 9.193a.75.75 0 010 1.06l-1.06 1.061a.75.75 0 11-1.061-1.06l1.06-1.061a.75.75 0 011.061 0z', 'moon': 'M9.598 1.591a.75.75 0 01.785-.175 7 7 0 11-8.967 8.967.75.75 0 01.961-.96 5.5 5.5 0 007.046-7.046.75.75 0 01.175-.786zm1.616 1.945a7 7 0 01-7.678 7.678 5.5 5.5 0 107.678-7.678z', 'sync': 'M1.705 8.005a.75.75 0 0 1 .834.656 5.5 5.5 0 0 0 9.592 2.97l-1.204-1.204a.25.25 0 0 1 .177-.427h3.646a.25.25 0 0 1 .25.25v3.646a.25.25 0 0 1-.427.177l-1.38-1.38A7.002 7.002 0 0 1 1.05 8.84a.75.75 0 0 1 .656-.834ZM8 2.5a5.487 5.487 0 0 0-4.131 1.869l1.204 1.204A.25.25 0 0 1 4.896 6H1.25A.25.25 0 0 1 1 5.75V2.104a.25.25 0 0 1 .427-.177l1.38 1.38A7.002 7.002 0 0 1 14.95 7.16a.75.75 0 0 1-1.49.178A5.5 5.5 0 0 0 8 2.5Z', 'home': 'M6.906.664a1.749 1.749 0 0 1 2.187 0l5.25 4.2c.415.332.657.835.657 1.367v7.019A1.75 1.75 0 0 1 13.25 15h-3.5a.75.75 0 0 1-.75-.75V9H7v5.25a.75.75 0 0 1-.75.75h-3.5A1.75 1.75 0 0 1 1 13.25V6.23c0-.531.242-1.034.657-1.366l5.25-4.2Zm1.25 1.171a.25.25 0 0 0-.312 0l-5.25 4.2a.25.25 0 0 0-.094.196v7.019c0 .138.112.25.25.25H5.5V8.25a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 .75.75v5.25h2.75a.25.25 0 0 0 .25-.25V6.23a.25.25 0 0 0-.094-.195Z', 'github': 'M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z'};
+var utterancesLoad=0;
+
+let themeSettings={
+    "dark": ["dark","moon","#00f0ff","dark-blue"],
+    "light": ["light","sun","#ff5000","github-light"],
+    "auto": ["auto","sync","","preferred-color-scheme"]
+};
+function changeTheme(mode, icon, color, utheme){
+    document.documentElement.setAttribute("data-color-mode",mode);
+    document.getElementById("themeSwitch").setAttribute("d",value=IconList[icon]);
+    document.getElementById("themeSwitch").parentNode.style.color=color;
+    if(utterancesLoad==1){utterancesTheme(utheme);}
+}
+function modeSwitch(){
+    let currentMode=document.documentElement.getAttribute('data-color-mode');
+    let newMode = currentMode === "light" ? "dark" : currentMode === "dark" ? "auto" : "light";
+    localStorage.setItem("meek_theme", newMode);
+    if(themeSettings[newMode]){
+        changeTheme(...themeSettings[newMode]);
+    }
+}
+function utterancesTheme(theme){
+    const message={type:'set-theme',theme: theme};
+    const iframe=document.getElementsByClassName('utterances-frame')[0];
+    iframe.contentWindow.postMessage(message,'https://utteranc.es');
+}
+if(themeSettings[theme]){changeTheme(...themeSettings[theme]);}
+console.log("\n %c Gmeek last https://github.com/Meekdai/Gmeek \n","padding:5px 0;background:#02d81d;color:#fff");
+</script>
+
+<script>
+document.getElementById("pathHome").setAttribute("d",IconList["home"]);
+document.getElementById("pathIssue").setAttribute("d",IconList["github"]);
+
+
+
+function openComments(){
+    cm=document.getElementById("comments");
+    cmButton=document.getElementById("cmButton");
+    cmButton.innerHTML="loading";
+    span=document.createElement("span");
+    span.setAttribute("class","AnimatedEllipsis");
+    cmButton.appendChild(span);
+
+    script=document.createElement("script");
+    script.setAttribute("src","https://utteranc.es/client.js");
+    script.setAttribute("repo","LiChu3/lichu3.github.io");
+    script.setAttribute("issue-term","title");
+    
+    if(localStorage.getItem("meek_theme")=="dark"){script.setAttribute("theme","dark-blue");}
+    else if(localStorage.getItem("meek_theme")=="light") {script.setAttribute("theme","github-light");}
+    else{script.setAttribute("theme","preferred-color-scheme");}
+    
+    script.setAttribute("crossorigin","anonymous");
+    script.setAttribute("async","");
+    cm.appendChild(script);
+
+    int=self.setInterval("iFrameLoading()",200);
+}
+
+function iFrameLoading(){
+    var utterances=document.getElementsByClassName('utterances');
+    if(utterances.length==1){
+        if(utterances[0].style.height!=""){
+            utterancesLoad=1;
+            int=window.clearInterval(int);
+            document.getElementById("cmButton").style.display="none";
+            console.log("utterances Load OK");
+        }
+    }
+}
+
+
+
+</script>
+
+
+</html>
